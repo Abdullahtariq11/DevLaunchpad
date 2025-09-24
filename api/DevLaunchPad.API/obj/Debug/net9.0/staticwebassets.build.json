@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "u8wmmMTVBPvPNsJEjaRar5WTs9ACmz/YBcp6nqpMlus=",
+  "Source": "DevLaunchPad.API",
+  "BasePath": "_content/DevLaunchPad.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
