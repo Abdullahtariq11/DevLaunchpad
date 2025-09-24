@@ -1,0 +1,172 @@
+Title,Body,Labels
+backend: scaffold .NET 8 Web API + solution,"Create a blank ASP.NET Core 8 Web API project (single project) with initial solution structure.
+
+**Acceptance Criteria**
+- `DevLaunchpad.Api` runs locally and returns 200 on `/swagger` and `/health` (temporary).
+- Nullable enabled, TreatWarningsAsErrors on.
+- `Directory.Build.props` with analyzers + LangVersion set.","backend,setup"
+backend: add EF Core + Npgsql + initial migrations,"Add Entity Framework Core for PostgreSQL and create initial migrations + DbContext.
+
+**Acceptance Criteria**
+- Packages added: `Microsoft.EntityFrameworkCore`, `Npgsql.EntityFrameworkCore.PostgreSQL`.
+- `AppDbContext` registered; connection string from env.
+- `dotnet ef database update` creates DB locally.","backend,db"
+backend: docker compose (api + postgres) + health endpoints,"Provide a `docker-compose.yml` that boots API and Postgres. Implement `/health/live` and `/health/ready`.
+
+**Acceptance Criteria**
+- `docker compose up` starts API + Postgres successfully.
+- `/health/live` always 200; `/health/ready` waits for DB connectivity.","backend,ops"
+backend: Serilog + global exception → RFC7807 ProblemDetails,"Add Serilog request logging, correlation Id, and global exception middleware that returns RFC7807 ProblemDetails.
+
+**Acceptance Criteria**
+- Errors include `traceId`.
+- Structured logs show operation name + duration.","backend,observability"
+backend: Identity (register/login/logout/me) with cookie or JWT,"Wire ASP.NET Core Identity with either JWT or HttpOnly cookie auth (decide in ADR). Implement:
+- `POST /v1/auth/register`
+- `POST /v1/auth/login`
+- `POST /v1/auth/logout`
+- `GET /v1/auth/me`
+
+**Acceptance Criteria**
+- Unauthenticated calls return 401.
+- On login, subsequent authorized requests succeed (cookie or bearer).","backend,auth"
+backend: seed default Topics on first user creation,"On successful user registration, seed a default set of DSA topics with sensible `TargetCount` and `Order`.
+
+**Acceptance Criteria**
+- New user sees topics from `/v1/topics` immediately.
+- `Order` field determines display priority (ascending).","backend,feature:topics"
+"backend: Topics endpoints (GET, PATCH) + validation","Implement:
+- `GET /v1/topics`
+- `PATCH /v1/topics/{id}` → { targetCount, order? }
+
+**Acceptance Criteria**
+- Only current user's topics returned/updated.
+- `targetCount >= 0`, `order >= 0` validation errors return ProblemDetails (400).","backend,feature:topics"
+"backend: Problems endpoints (POST, GET, PATCH) + validation","Implement Problems:
+- `POST /v1/problems` { title, url, topicId, difficulty, status }
+- `GET /v1/problems?topicId&status&search&page&pageSize`
+- `PATCH /v1/problems/{id}` { status, notes, solvedAt }
+
+**Acceptance Criteria**
+- Title/url required; difficulty in {Easy,Medium,Hard}; valid topicId (owned by user).
+- `MarkSolved` only once; sets `SolvedAt` using `IClock`.
+- List supports filtering and pagination; ordered stable by CreatedAt desc.","backend,feature:problems"
+"backend: Applications endpoints (POST, GET, PATCH) + validation","Implement Applications:
+- `POST /v1/apps` { company, role, link, status, nextActionDate?, notes? }
+- `GET /v1/apps?status`
+- `PATCH /v1/apps/{id}` { status, notes, nextActionDate? }
+
+**Acceptance Criteria**
+- Status in {Applied, OA, Phone, Tech, Offer, Rejected}; Rejected is terminal.
+- List filters by status; returns only current user's rows.","backend,feature:applications"
+"backend: Vault - Resumes (POST create, POST version upload, GET list)","Implement Resumes endpoints:
+- `POST /v1/resumes` { title }
+- `POST /v1/resumes/{id}/versions` (multipart: file + notes?)
+- `GET /v1/resumes` (with versions)
+
+**Acceptance Criteria**
+- Files saved under `/storage/{userId}/resumes/{resumeId}/v{n}.{ext}`.
+- Version auto-increments.
+- Only PDF/DOCX accepted; size limit 10MB; MIME checked.","backend,feature:vault"
+"backend: Vault - Cover Letters (POST create, POST version upload, GET list)","Implement Cover Letters endpoints mirroring Resumes:
+- `POST /v1/coverletters` { title }
+- `POST /v1/coverletters/{id}/versions` (multipart: file + notes?)
+- `GET /v1/coverletters` (with versions)
+
+**Acceptance Criteria**
+- Files saved under `/storage/{userId}/coverletters/{coverLetterId}/v{n}.{ext}`.
+- Version auto-increments; PDF/DOCX only; 10MB limit.","backend,feature:vault"
+backend: Summary endpoint (GET /v1/summary),"Aggregate per-user progress:
+- `streak` (consecutive days with >=1 Problem marked Done).
+- `perTopic` [{ topicId, done, target }].
+- `appsByStage` { Applied, OA, Phone, Tech, Offer, Rejected } counts.
+
+**Acceptance Criteria**
+- After marking a problem Done today, streak increments by 1.","backend,feature:summary"
+"backend: integration tests with Testcontainers (auth, topics, problems, apps, vault)","Create integration tests using Testcontainers (PostgreSQL). Cover at least:
+- Register → Login → Me flow.
+- Problems: create → patch solved → list filters.
+- Applications: create → invalid transition (expect 400) → valid transitions.
+- Vault: upload resume version → list; cross-user access denied.
+
+**Acceptance Criteria**
+- `dotnet test` passes locally and in CI.","backend,testing"
+backend: Swagger examples + Postman collection,"Provide example requests/responses for all endpoints in Swagger. Export a Postman collection to `/docs/api`.
+
+**Acceptance Criteria**
+- Each 200/400/401 has an example.
+- Postman collection executes against local docker and against deployed API (envs).","backend,docs"
+backend: ADRs for key decisions,"Write short ADRs:
+- ADR-001: Single project vertical slices; no repository pattern.
+- ADR-002: EF Core + PostgreSQL + Testcontainers for integration tests.
+- ADR-003: ProblemDetails + FluentValidation for input/validation.
+- ADR-004: Identity auth (cookie/JWT) and per-user scoping.","backend,docs"
+web: scaffold Next.js 15 + TypeScript + Tailwind,"Initialize Next.js app with Tailwind, ESLint, Prettier, and basic layout (navbar/sidebar).
+
+**Acceptance Criteria**
+- App runs locally; base layout renders.","frontend,setup"
+"web: auth pages (/login, /register) + API wiring","Build login and register pages; wire to API (`/auth/login`, `/auth/register`). Handle 401 redirects.
+
+**Acceptance Criteria**
+- Successful login sets session (cookie or token).
+- Unauthed routes redirect to /login.","frontend,auth"
+web: dashboard page wired to /v1/summary,"Implement Dashboard with cards:
+- Streak & daily goal
+- Per-topic progress bars
+- Applications by stage
+
+**Acceptance Criteria**
+- Fetches `/v1/summary` with credentials.","frontend,feature:dashboard"
+web: practice page (topics tabs + problems table),"Build Practice page:
+- Tabs by Topic (ordered by `order`)
+- Problems table (title, difficulty, status)
+- Add problem modal
+- Status toggle to mark Done/InProgress
+
+**Acceptance Criteria**
+- Interacts with `/v1/topics` and `/v1/problems` endpoints.","frontend,feature:practice"
+web: applications page (list or kanban),"Implement Applications page:
+- List or kanban grouped by status
+- Add/edit application form
+- Filter by status
+
+**Acceptance Criteria**
+- Uses `/v1/apps` endpoints end-to-end.","frontend,feature:applications"
+web: vault page (resumes & cover letters) with upload,"Implement Vault page:
+- Lists Resumes and Cover Letters with version chips
+- Upload new version via multipart form
+- Download/preview links
+
+**Acceptance Criteria**
+- Uses `/v1/resumes` and `/v1/coverletters` endpoints.","frontend,feature:vault"
+"web: error handling, loading/empty states, toasts","Add global error boundary/handler, loading skeletons, empty-state messaging, and toast notifications for API errors/success.
+
+**Acceptance Criteria**
+- Consistent UX across pages; clear feedback on failures.","frontend,ux"
+ops: CI for API and Web (build/test),"GitHub Actions workflows:
+- API: restore, build, test (includes Testcontainers).
+- Web: install, build, lint.
+
+**Acceptance Criteria**
+- Status badges added to README.","ops,ci"
+"ops: deploy API (Render/Railway) + DB, and Web (Vercel)","Set up deployments:
+- API + Postgres on Render/Railway.
+- Web on Vercel.
+
+**Acceptance Criteria**
+- Public URLs available and added to README.","ops,deploy"
+"docs: README (root) with demo, setup, endpoints, architecture","Write a concise README including:
+- What/Why (1–2 paragraphs)
+- Live demo links
+- Quick start (`docker compose up`)
+- Auth notes (cookie/JWT)
+- API docs link (Swagger) and Postman collection
+- Architecture diagram (draw.io) and UML link
+- Screenshots or short demo GIF
+
+**Acceptance Criteria**
+- A new contributor can run the project in <10 minutes.",docs
+nice: sequence diagrams for key flows (draw.io),"Create diagrams for flows such as:
+- User registers → topics seed
+- Mark problem as Done → streak increments
+- Upload resume version → list shows v{n}","docs,design"
